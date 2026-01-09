@@ -22,7 +22,19 @@ RUN mkdir /CLIProxyAPI
 
 COPY --from=builder ./app/CLIProxyAPI /CLIProxyAPI/CLIProxyAPI
 
-COPY config.example.yaml /CLIProxyAPI/config.example.yaml
+# Copy config.example.yaml from builder stage
+COPY --from=builder ./app/config.example.yaml /CLIProxyAPI/config.example.yaml
+
+# Always create config.yaml from example to ensure the app has a config file when deployed to Koyeb
+# This is critical because Koyeb doesn't allow running commands after deployment
+# Users can override configuration via environment variables or the management API after deployment
+RUN if [ -f /CLIProxyAPI/config.example.yaml ]; then \
+        cp /CLIProxyAPI/config.example.yaml /CLIProxyAPI/config.yaml && \
+        echo "Created config.yaml from config.example.yaml"; \
+    else \
+        echo "ERROR: config.example.yaml not found!" && exit 1; \
+    fi && \
+    ls -lh /CLIProxyAPI/config*.yaml
 
 WORKDIR /CLIProxyAPI
 
